@@ -27,9 +27,9 @@ app.post("/movies", async(req, res) => {
 
     try {
 
-        //case insensitive - se a busca for feita por john Wick ou John Wick ou JOHN WICK, o registro vai ser retornado na consulta
+        //case insensitive - se a busca for feita por john wick ou John wick ou JOHN WICK, o registro vai ser retornado na consulta
 
-        //case sensitive - sebuscar por john wick e no banco de dados estiver como John wick, não vai sr retornado na consulta
+        //case sensitive - sebuscar por john wick e no banco de dados estiver como John wick, não vai ser retornado na consulta
 
         const movieWithSameTitle = await prisma.movie.findFirst({
             where: { 
@@ -70,7 +70,7 @@ app.put("/movies/:id", async (req, res) => {
         }
     });
 
-    if(movie){
+    if(!movie){
         res.status(404).send({ message: "Filme não encontrado" });
     }
 
@@ -89,6 +89,24 @@ app.put("/movies/:id", async (req, res) => {
 }
 
     //retornar o status correto informando que o filme foi atualizado
+    res.status(200).send();
+});
+
+app.delete("/movies/:id", async (req, res) => {
+    const id = Number (req.params.id);
+
+    try {
+       const movie = await prisma.movie.findUnique({ where: { id }});
+
+        if (!movie) {
+             res. status(404).send({ message: "O filme não foi encontrado" });
+    }
+
+    await prisma.movie.delete({where: { id } });
+} catch (error) {
+     res.status(500).send ({ message: "não foi possível remover o filme" });  
+}
+
     res.status(200).send();
 });
 
