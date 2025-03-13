@@ -38,7 +38,7 @@ app.post("/movies", async(req, res) => {
         });
 
         if (movieWithSameTitle) {
-            return res
+            res
             .status (409)
             .send({ message: "Já existe um filme cadastrado com esse título" });
         }
@@ -53,7 +53,7 @@ app.post("/movies", async(req, res) => {
             },
         });
     } catch (error) {
-        return res.status(500).send({message: "Falha ao cadastrar um filme"})
+        res.status(500).send({message: "Falha ao cadastrar um filme"})
     }
     
     res.status(201).send();
@@ -71,7 +71,7 @@ app.put("/movies/:id", async (req, res) => {
     });
 
     if(movie){
-        return res.status(404).send({ message: "Filme não encontrado" });
+        res.status(404).send({ message: "Filme não encontrado" });
     }
 
     const data = { ...req.body };
@@ -85,7 +85,7 @@ app.put("/movies/:id", async (req, res) => {
         data: data
     });
 }catch(error){
-    return res.status(500).send ({ message: "Falha ao atualizar o registro do filme" });
+    res.status(500).send ({ message: "Falha ao atualizar o registro do filme" });
 }
 
     //retornar o status correto informando que o filme foi atualizado
