@@ -51,6 +51,17 @@
               }
             }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "Filme atualizado com sucesso"
+          },
+          "404": {
+            "description": "Filme não encontrado"
+          },
+          "500": {
+            "description": "Falha ao atualizar o registro do filme"
+          }  
         }
       }
     }
