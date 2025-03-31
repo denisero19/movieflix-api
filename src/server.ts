@@ -107,38 +107,86 @@ app.delete("/movies/:id", async (req, res) => {
 
     await prisma.movie.delete({where: { id } });
 } catch (error) {
-     res.status(500).send ({ message: "não foi possível remover o filme" });  
+    res.status(500).send ({ message: "não foi possível remover o filme" });  
 }
 
     res.status(200).send();
 });
 
-app.get("/movies/:genderName", async(req, res) => {
+// app.get("/movies/:genderName", async(req, res) => {
      
-    try {
-       const moviesFilteredByGenderName = await prisma.movie.findMany({
-        include: {
-            genres: true,
-            languages: true
-        },
-        where: {
-            genres: {
-                name: {
-                    equals: req.params.genderName,
-                    mode: "insensitive"
-                }
-            }
-        }
-    });
-      res.status(200).send(moviesFilteredByGenderName);
+//     try {
+//        const moviesFilteredByGenderName = await prisma.movie.findMany({
+//         include: {
+//             genres: true,
+//             languages: true
+//         },
+//         where: {
+//             genres: {
+//                 name: {
+//                     equals: req.params.genderName,
+//                     mode: "insensitive"
+//                 }
+//             }
+//         }
+//     });
+//       res.status(200).send(moviesFilteredByGenderName);
 
-} catch (error) {
-      res.status(500).send({ message: "Falha ao filtrar filmes por gênero" }); 
-}
-
-    
-});
+// } catch (error) {
+//       res.status(500).send({ message: "Falha ao filtrar filmes por gênero" }); 
+// }
+  
+// });
 
 app.listen(port, () => {
     console.log(`Servidor em execução em http://localhost:${port}`);
+});
+
+// 1. Extrai o `id` da rota e o `name` do body da requisição.
+app.put("/genres/:id", async (req, res) => {
+   const { id } = req.params;
+   const { name } = req.body;
+
+// 2. Verifica se o `name` foi fornecido. Se não, retorna um erro 400 ao cliente informando que o nome é obrigatório.
+   if (!name) {
+    res.status(400).send({ message: "O nome do gênero é obrigatório." });
+   }
+
+// 3. Tenta encontrar um gênero com o id fornecido. Se o gênero não for encontrado, retorna um erro 404 ao cliente.
+   try {
+    const genre = await prisma.genre.findUnique({
+        where: { id: Number(id) },
+    });
+
+    if (!genre) {
+      res.status(404).send({ message: "Gênero não encontrado."});
+    }
+
+// 4. Verifica se já existe outro gênero com o mesmo nome (ignorando maiúsculas e minúsculas), excluindo o gênero que está sendo atualizado.Se um gênero com o mesmo nome já existir, retorna um erro 409 ao cliente.
+    const existingGenre = await prisma.genre.findFirst({
+        where: {
+            name: { equals: name, mode: "insensitive" },
+            id: { not: Number(id) }
+        },
+    });
+
+    if(existingGenre){
+        res.status(409).send({ message: "este nome de gênero já existe." });
+    };
+
+// 5. Se não houver conflito, atualiza o gênero com o novo nome.
+    const updateGenre = await prisma.genre.update({
+        where: { id:Number(id) },
+        data: { name },
+    });
+
+// 6. Se a atualização for bem-sucedida, retorna o gênero atualizado ao cliente com um status 200.
+    res.status(200).json(updateGenre);
+
+// 7. Se ocorrer um erro durante qualquer parte do processo, retorna um erro 500 ao cliente.
+} catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Houve um problema ao atualizar o gênero" })
+   }
+    
 });
