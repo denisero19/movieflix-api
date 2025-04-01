@@ -50,9 +50,12 @@ app.post("/movies", async (req, res) => {
         });
     }
     catch (error) {
+        console.error(error);
         res.status(500).send({ message: "Falha ao cadastrar um filme" });
+        return
     }
     res.status(201).send();
+    return
 });
 app.put("/movies/:id", async (req, res) => {
     //pegar o id do registro que vai ser atualizado
@@ -65,6 +68,7 @@ app.put("/movies/:id", async (req, res) => {
         });
         if (!movie) {
             res.status(404).send({ message: "Filme não encontrado" });
+            return
         }
         const data = { ...req.body };
         data.release_date = data.release_date ? new Date(data.release_date) : undefined;
@@ -77,10 +81,13 @@ app.put("/movies/:id", async (req, res) => {
         });
     }
     catch (error) {
+        console.error(error);
         res.status(500).send({ message: "Falha ao atualizar o registro do filme" });
+        return
     }
     //retornar o status correto informando que o filme foi atualizado
     res.status(200).send();
+    return
 });
 app.delete("/movies/:id", async (req, res) => {
     const id = Number(req.params.id);
@@ -92,9 +99,12 @@ app.delete("/movies/:id", async (req, res) => {
         await prisma.movie.delete({ where: { id } });
     }
     catch (error) {
+        console.error(error);
         res.status(500).send({ message: "não foi possível remover o filme" });
+        return
     }
     res.status(200).send();
+    return
 });
 app.get("/movies/:genderName", async (req, res) => {
     try {
@@ -113,9 +123,12 @@ app.get("/movies/:genderName", async (req, res) => {
             }
         });
         res.status(200).send(moviesFilteredByGenderName);
+        return
     }
     catch (error) {
+        console.error(error);
         res.status(500).send({ message: "Falha ao filtrar filmes por gênero" });
+        return
     }
 });
 app.listen(port, () => {
