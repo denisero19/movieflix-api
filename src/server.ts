@@ -1,8 +1,7 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
-import { title } from "process";
 
 const port = 3000;
 const app = express();
@@ -343,38 +342,80 @@ app.listen(port, () => {
 
 // 4 - Por fim, retornamos um objeto com as informações que desejamos: `totalMovies`, `averageDuration` e a lista de `movies`.
 
-app.get("movies", async (_, res) => {
-    try {
-       const movies = await prisma.movie.findMany({
-            orderBy: {
-                title: "asc",
-            },
+// app.get("/movies", async (_, res) => {
+//     try {
+//        const movies = await prisma.movie.findMany({
+//             orderBy: {
+//                 title: "asc",
+//             },
 
-            include: {
-                genres: true,
-                languages: true
-            }
-        });
+//             include: {
+//                 genres: true,
+//                 languages: true
+//             }
+//         });
 
-        const totalMovies = movies.length
+//         const totalMovies = movies.length
 
-        let totalDuration = 0;
-        for(const movie of movies) {
-            totalDuration += movie.duration;
-        }
+//         let totalDuration = 0;
+//         for(const movie of movies) {
+//             totalDuration += movie.duration;
+//         }
 
-        const averageDuration = totalMovies > 0 ? totalDuration / totalMovies : 0;
+//         const averageDuration = totalMovies > 0 ? totalDuration / totalMovies : 0;
         
-        res.json({
-            totalMovies,
-            averageDuration,
-            movies,
-        });
+//         res.json({
+//             totalMovies,
+//             averageDuration,
+//             movies,
+//         });
         
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).send({ message: "Falha ao buscar os filmes"});
+//         return
+//     }
+// });
+
+//6 - Modificando o endpoint de listagem de filmes para permitir ordenação por diversos critérios //
+
+// 1. Primeiro, extrai o valor de `sort` da string de consulta. Este é o critério que os usuários desejam usar para ordenar os filmes.
+
+// 2. Em seguida, define a cláusula `orderBy` com base no valor de `sort`. Se `sort` for "title", a ordenação será por título. Se `sort` for "release_date", a ordenação será por data de lançamento. Se `sort` for um valor não suportado ou não definido, a ordenação será mantida como indefinida, o que significa que o Prisma irá usar a ordenação padrão.
+
+// 3. Depois, realiza a busca dos filmes no banco de dados usando o Prisma, passando a cláusula `orderBy` que acabamos de definir.
+
+// 4. Por fim, retorna a lista de filmes ao cliente. Se ocorrer um erro durante qualquer parte deste processo, retorna um erro 500 ao cliente.
+
+app.get("/movies", async (req, res) => {
+      const { sort } = req.query;
+      console.log(sort);
+      
+      let orderBy: Prisma.MovieOrderByWithRelationInput | Prisma.MovieOrderByWithRelationInput[] | undefined;;
+      if (sort === 'title') {
+        orderBy = { 
+            title: 'asc'
+        };
+
+      }else if (sort === 'release_date') {
+        orderBy = { 
+            release_date: 'asc'
+        };
+      }
+
+      try {
+          const movies = await prisma.movie.findMany({
+                orderBy,
+                include: {
+                        genres: true,
+                        languages: true,
+        },
+      });
+  
+    res.json(movies);
+
     } catch (error) {
         console.error(error);
-        res.status(500).send({ message: "Falha ao buscar os filmes"});
-        return
+        res.status(500).json({ message: 'Falha ao buscar os filmes'});
     }
-});
-
+  });
