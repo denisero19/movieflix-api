@@ -1,5 +1,5 @@
 import express from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
 
@@ -155,7 +155,6 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.listen(port, () => {
     console.log(`Servidor em execução em http://localhost:${port}`);
 });
-
 
 // EXERCÍCIOS NODE.JS
 
@@ -387,35 +386,116 @@ app.listen(port, () => {
 
 // 4. Por fim, retorna a lista de filmes ao cliente. Se ocorrer um erro durante qualquer parte deste processo, retorna um erro 500 ao cliente.
 
-app.get("/movies", async (req, res) => {
-      const { sort } = req.query;
-      console.log(sort);
+// app.get("/movies", async (req, res) => {
+//       const sort  = req.query.sort;
+//       console.log(sort);
       
-      let orderBy: Prisma.MovieOrderByWithRelationInput | Prisma.MovieOrderByWithRelationInput[] | undefined;;
-      if (sort === 'title') {
-        orderBy = { 
-            title: 'asc'
-        };
+//       let orderBy: Prisma.MovieOrderByWithRelationInput | Prisma.MovieOrderByWithRelationInput[] | undefined;;
+//       if (sort === 'title') {
+//         orderBy = { 
+//             title: 'asc'
+//         };
 
-      }else if (sort === 'release_date') {
-        orderBy = { 
-            release_date: 'asc'
-        };
-      }
+//       }else if (sort === 'release_date') {
+//         orderBy = { 
+//             release_date: 'asc'
+//         };
+//       }
 
-      try {
-          const movies = await prisma.movie.findMany({
-                orderBy,
-                include: {
-                        genres: true,
-                        languages: true,
-        },
-      });
+//       try {
+//           const movies = await prisma.movie.findMany({
+//                 orderBy,
+//                 include: {
+//                     genres: true,
+//                     languages: true,
+//         },
+//       });
   
-    res.json(movies);
+//     res.json(movies);
 
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Falha ao buscar os filmes'});
+//     }
+//   });
+
+ // 7 - Criando um filtro de language para o endpoint de listagem de filmes//
+
+// 1. Primeiro, extrai o valor de `language` da string de consulta. Este é o idioma que os usuários desejam usar para filtrar os filmes.
+
+// 2. Em seguida, define a cláusula `where` com base no valor de `language`. Se `language` for definido, a busca será realizada por filmes que possuem esse idioma. Caso contrário, `where` é mantido como indefinido, o que significa que todos os filmes serão retornados.
+
+// 3. Depois, realiza a busca dos filmes no banco de dados usando o Prisma, passando a cláusula `where` que acabamos de definir.
+
+// 4. Por fim, retorna a lista de filmes ao cliente. Se ocorrer um erro durante qualquer parte deste processo, retorna um erro 500 ao cliente.
+
+// app.get("/movies", async (req, res) => {
+//       const { language }  = req.query;
+//       // const languageName = language as string;
+
+//       try {
+//         const movies = await prisma.movie.findMany({
+//           where: {
+//             language_id: { 
+//               equals: Number(language)
+//             }},
+
+//           include: {
+//               genres: true,
+//               languages: true,
+//   },
+// });
+//       res.json(movies);
+
+//       } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Falha ao buscar os filmes'});
+//       }
+// });
+
+//8 - Integração de funções de ordenação e filtro de idioma em um único endpoint.//
+
+// Este endpoint permite que os usuários filtrem filmes por idioma e ordenem os resultados por título ou data de lançamento. Se nenhum desses parâmetros for fornecido, o endpoint retornará todos os filmes sem qualquer ordenação específica.
+
+app.get("/movies", async (req, res) => {
+    const { language, sort } = req.query;
+    const languageName = language as string;
+    const sortName = sort as string;
+
+    let orderBy = {}
+    if ( sortName === "title") {
+      orderBy = {
+        title: "asc",
+      };
+    } else if (sortName === "release_date") {
+        orderBy = {
+          release_date: "asc",
+      }; 
+    };
+
+    try {
+          const movies = await prisma.movie.findMany({
+            orderBy,
+            where: {
+              languages: {
+                name: {
+                  equals: languageName,
+                  mode: "insensitive"
+                }
+              }
+            },
+           
+            include: {
+              genres: true,
+              languages: true,
+            },
+          });
+
+          res.json(movies);
+      
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Falha ao buscar os filmes'});
+      console.error(error);
+      res.status(500).json({ message: 'Falha ao buscar os filmes'});
     }
-  });
+});
+
