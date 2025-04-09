@@ -1,5 +1,5 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
 
@@ -458,44 +458,42 @@ app.listen(port, () => {
 // Este endpoint permite que os usuários filtrem filmes por idioma e ordenem os resultados por título ou data de lançamento. Se nenhum desses parâmetros for fornecido, o endpoint retornará todos os filmes sem qualquer ordenação específica.
 
 app.get("/movies", async (req, res) => {
-    const { language, sort } = req.query;
-    const languageName = language as string;
-    const sortName = sort as string;
+  const { language, sort } = req.query;
+  const languageName = language as string;
+  const sortName = sort as string;
 
-    let orderBy = {}
-    if ( sortName === "title") {
-      orderBy = {
-        title: "asc",
-      };
-    } else if (sortName === "release_date") {
-        orderBy = {
-          release_date: "asc",
-      }; 
-    };
+  let orderBy = undefined;
 
-    try {
-          const movies = await prisma.movie.findMany({
-            orderBy,
-            where: {
-              languages: {
+  if (sortName === "title") {
+    orderBy = { title: Prisma.SortOrder.asc };
+  } else if (sortName === "release_date") {
+    orderBy = { release_date: Prisma.SortOrder.asc };
+  }
+
+  try {
+    const movies = await prisma.movie.findMany({
+      where: languageName
+        ? {
+            languages: {
+              some: {
                 name: {
                   equals: languageName,
-                  mode: "insensitive"
-                }
-              }
+                  mode: "insensitive",
+                },
+              },
             },
-           
-            include: {
-              genres: true,
-              languages: true,
-            },
-          });
+          }
+        : undefined,
+      orderBy,
+      include: {
+        genres: true,
+        languages: true,
+      },
+    });
 
-          res.json(movies);
-      
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Falha ao buscar os filmes'});
-    }
+    res.json(movies);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Falha ao buscar os filmes" });
+  }
 });
-
